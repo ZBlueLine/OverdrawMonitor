@@ -55,6 +55,7 @@ public class OverdrawMonitorScripts : MonoBehaviour
         canvasGameObject.SetActive(false);
         overdrawMonitorComponent.SetAllOverridesTo(false);
         EditorUtility.SetDirty(overdrawMonitorComponent);
+        OverdrawMonitorFeature.ResetOverdrawMonitor();
     }
 
     private void Init()

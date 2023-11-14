@@ -29,10 +29,11 @@ public class OverdrawMonitorWindow : EditorWindow
         }
         using (new GUILayout.HorizontalScope())
         {
-            GUILayout.Label("Current\n" + m_MaxOverdrawRatio.ToString("0.000"));
+            GUILayout.Label("Current\n" + m_OverdrawRatio.ToString("0.000"));
             GUILayout.FlexibleSpace();
-            GUILayout.Label("Max\n" + m_OverdrawRatio.ToString("0.000"));
+            GUILayout.Label("Max\n" + m_MaxOverdrawRatio.ToString("0.000"));
         }
+        Repaint();
     }
 
 }

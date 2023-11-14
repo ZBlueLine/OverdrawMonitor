@@ -7,8 +7,8 @@ using static UnityEditor.Rendering.InspectorCurveEditor;
 
 class OverdrawMonitorPass : ScriptableRenderPass
 {
-    public float OverdrawRatio;
-    public float MaxOverdrawRatio;
+    private float m_OverdrawRatio;
+    private float m_MaxOverdrawRatio;
 
     private RenderTargetIdentifier defaultColorTargetID;
 
@@ -33,16 +33,13 @@ class OverdrawMonitorPass : ScriptableRenderPass
     private int yGroups;
     private ComputeBuffer resultBuffer;
 
-    private OverdrawMonitorComponent overdrawmonitorcomponent;
-
-    public OverdrawMonitorPass(LayerMask layerMask, ComputeShader overdrawParallelReduction, OverdrawMonitorComponent overdrawmonitorcomponent)
+    public OverdrawMonitorPass(LayerMask layerMask, ComputeShader overdrawParallelReduction)
     {
         OverdrawParallelReduction = overdrawParallelReduction;
         kernelIndex = OverdrawParallelReduction.FindKernel("CSMain");
         OverdrawTexID = Shader.PropertyToID("Overdraw");
         OverdrawOutputID = Shader.PropertyToID("Output");
         resultBuffer = new ComputeBuffer(outputData.Length, 4);
-        this.overdrawmonitorcomponent = overdrawmonitorcomponent;
 
         _profilingSampler = new ProfilingSampler("OverdrawMonitor");
 
@@ -108,6 +105,7 @@ class OverdrawMonitorPass : ScriptableRenderPass
             xGroups = cameraData.cameraTargetDescriptor.width / 32;
             yGroups = cameraData.cameraTargetDescriptor.height / 32;
             cmd.DispatchCompute(OverdrawParallelReduction, kernelIndex, xGroups, yGroups, 1);
+            var overdrawmonitorcomponent = VolumeManager.instance.stack.GetComponent<OverdrawMonitorComponent>();
             if (overdrawmonitorcomponent.DisplayOverDrawResultOnScreen == true)
             {
                 cmd.Blit(colorTargetDestinationID, cameraData.targetTexture);
@@ -129,17 +127,17 @@ class OverdrawMonitorPass : ScriptableRenderPass
         {
             TotalShadedFragments += i;
         }
-        OverdrawRatio = (float)TotalShadedFragments / (xGroups * 32 * yGroups * 32);
-        if(OverdrawRatio > MaxOverdrawRatio)
+        m_OverdrawRatio = (float)TotalShadedFragments / (xGroups * 32 * yGroups * 32);
+        if(m_OverdrawRatio > m_MaxOverdrawRatio)
         {
-            MaxOverdrawRatio = OverdrawRatio;
+            m_MaxOverdrawRatio = m_OverdrawRatio;
         }
-        OverdrawMonitorFeature.OverdrawRatio = OverdrawRatio;
-        OverdrawMonitorFeature.MaxOverdrawRatio = MaxOverdrawRatio;
+        OverdrawMonitorFeature.OverdrawRatio = m_OverdrawRatio;
+        OverdrawMonitorFeature.MaxOverdrawRatio = m_MaxOverdrawRatio;
     }
     public void Clear()
     {
-        MaxOverdrawRatio = 0;
+        m_MaxOverdrawRatio = 0;
     }
 }
 
@@ -152,23 +150,20 @@ public class OverdrawMonitorFeature : ScriptableRendererFeature
     public static float OverdrawRatio = 0;
     public static float MaxOverdrawRatio = 0;
 
-    OverdrawMonitorPass m_ScriptablePass;
-
-    private OverdrawMonitorComponent overdrawmonitorcomponent;
+    static OverdrawMonitorPass m_ScriptablePass;
     public override void Create()
     {
-        overdrawmonitorcomponent = VolumeManager.instance.stack.GetComponent<OverdrawMonitorComponent>();
 
         layerMask = LayerMask.GetMask("Default");
         OverdrawCountComputeShader = UnityEditor.AssetDatabase.LoadAssetAtPath<ComputeShader>("Assets/OverdrawMonitor/Shaders/OverdrawCountComputeShader.compute");
-        m_ScriptablePass = new OverdrawMonitorPass(layerMask, OverdrawCountComputeShader, overdrawmonitorcomponent);
+        m_ScriptablePass = new OverdrawMonitorPass(layerMask, OverdrawCountComputeShader);
     }
 
     public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
     {
+        var overdrawmonitorcomponent = VolumeManager.instance.stack.GetComponent<OverdrawMonitorComponent>();
         if (overdrawmonitorcomponent.IsActive())
         {
-            m_ScriptablePass.Clear();
             if (overdrawmonitorcomponent.DisplayOverDrawResultOnScreen == true)
             {
                 m_ScriptablePass.renderPassEvent = RenderPassEvent.AfterRendering;
@@ -182,6 +177,11 @@ public class OverdrawMonitorFeature : ScriptableRendererFeature
                 renderer.EnqueuePass(m_ScriptablePass);
             }
         }
+    }
+
+    public static void ResetOverdrawMonitor()
+    {
+        m_ScriptablePass.Clear();
     }
 }
 
