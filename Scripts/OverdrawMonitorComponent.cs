@@ -7,7 +7,7 @@ namespace UnityEngine.Rendering.Universal
     [Serializable, VolumeComponentMenu("Custom/OverdrawMonitor")]
     public class OverdrawMonitorComponent : VolumeComponent, IPostProcessComponent
     {
-        public BoolParameter CountOverdrawRatio = new BoolParameter(true);
+        public BoolParameter CountOverdrawRatio = new BoolParameter(false);
         public BoolParameter DisplayOverDrawResultOnScreen = new BoolParameter(false);
         public bool IsActive() => (bool)CountOverdrawRatio;
         public bool IsTileCompatible() => false;

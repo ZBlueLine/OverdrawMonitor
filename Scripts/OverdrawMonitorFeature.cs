@@ -137,6 +137,10 @@ class OverdrawMonitorPass : ScriptableRenderPass
         OverdrawMonitorFeature.OverdrawRatio = OverdrawRatio;
         OverdrawMonitorFeature.MaxOverdrawRatio = MaxOverdrawRatio;
     }
+    public void Clear()
+    {
+        MaxOverdrawRatio = 0;
+    }
 }
 
 //直接通过OverdrawMonitor类注入Pass，Renderfeature不便于动态控制
@@ -164,6 +168,7 @@ public class OverdrawMonitorFeature : ScriptableRendererFeature
     {
         if (overdrawmonitorcomponent.IsActive())
         {
+            m_ScriptablePass.Clear();
             if (overdrawmonitorcomponent.DisplayOverDrawResultOnScreen == true)
             {
                 m_ScriptablePass.renderPassEvent = RenderPassEvent.AfterRendering;
